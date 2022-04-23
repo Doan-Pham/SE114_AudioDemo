@@ -22,9 +22,10 @@ import java.io.File;
 
 public class MainActivity extends AppCompatActivity {
     MediaPlayer mediaPlayer;
-    TextView textView;
+    TextView songNameTextView;
+    TextView audioDurationTextView;
+    TextView audioCurrentTextView;
 
-    @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
@@ -33,10 +34,10 @@ public class MainActivity extends AppCompatActivity {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, 0);
         }
 
-        // mediaPlayer = MediaPlayer.create(this, R.raw.julius_marx_julius_marx_vices);
 
-        textView = findViewById(R.id.song_name_textview);
-        //textView.setText(getExternalFilesDir(null).getPath());
+        audioDurationTextView = findViewById(R.id.audio_duration_textview);
+        songNameTextView = findViewById(R.id.song_name_textview);
+        audioCurrentTextView = findViewById(R.id.audio_current_textview);
 
         Button playButton = findViewById(R.id.play_button);
         playButton.setOnClickListener(new View.OnClickListener() {
@@ -55,8 +56,6 @@ public class MainActivity extends AppCompatActivity {
                 mediaPlayer.pause();
             }
         });
-
-        TextView audioCurrentTextView = findViewById(R.id.audio_current_textview);
 
 
         Button forwardButton = findViewById(R.id.forward_button);
@@ -88,18 +87,22 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-
+// mediaPlayer = MediaPlayer.create(this, R.raw.julius_marx_julius_marx_vices);
 //        if (getFilesFromGallery() == null) mediaPlayer = null;
 //        else
 //            mediaPlayer = MediaPlayer.create(this, getFilesFromGallery());
 
         //mediaPlayer = getFilesFromGallery() == null ? null : MediaPlayer.create(this, getFilesFromGallery())
         // ;
-        Uri filePath = Uri.fromFile(new File(getFilesDir().getPath() + "julius_marx_julius_marx_vices.mp3"));
+        Uri filePath = Uri.fromFile(
+                new File(getFilesDir().getPath() + "julius_marx_julius_marx_vices.mp3"));
+
         mediaPlayer = MediaPlayer.create(this, filePath);
-        TextView audioDurationTextView = findViewById(R.id.audio_duration_textview);
-        if (mediaPlayer != null) audioDurationTextView.setText(mediaPlayer.getDuration() + "");
-        else audioDurationTextView.setText(getFilesDir().getPath());
+
+        if (mediaPlayer != null)
+            audioDurationTextView.setText(mediaPlayer.getDuration() + "");
+        else
+            audioDurationTextView.setText(getFilesDir().getPath());
 
     }
 
@@ -117,9 +120,10 @@ public class MainActivity extends AppCompatActivity {
                 MediaStore.Audio.Media.DURATION,
                 //MediaStore.Audio.Media.SIZE
         };
-        String selection = null;//MediaStore.Audio.Media.DISPLAY_NAME +
-        //" == ?";
-        String[] selectionArgs = null;//new String[]{
+        String selection = null;
+        //MediaStore.Audio.Media.DISPLAY_NAME  == ?";
+        String[] selectionArgs = null;
+        //new String[]{
 //                String.valueOf(TimeUnit.MILLISECONDS.convert(
 //                    5, TimeUnit.MINUTES))
         //"julius_marx_julius_marx_vices.mp3"
@@ -156,7 +160,7 @@ public class MainActivity extends AppCompatActivity {
 
                 Uri contentUri = ContentUris.withAppendedId(
                         MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, id);
-                textView.setText(name);
+                songNameTextView.setText(name);
                 // Stores column values and the contentUri in a local object
                 // that represents the media file.
                 return contentUri;
