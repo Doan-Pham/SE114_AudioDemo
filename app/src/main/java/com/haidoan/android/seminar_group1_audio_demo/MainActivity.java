@@ -1,13 +1,17 @@
 package com.haidoan.android.seminar_group1_audio_demo;
 
 import android.Manifest;
+import android.content.ContentResolver;
 import android.content.ContentUris;
+import android.content.ContentValues;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.media.MediaPlayer;
+import android.media.MediaRecorder;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
@@ -15,10 +19,11 @@ import android.widget.Button;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import java.io.File;
+import java.text.SimpleDateFormat;
+import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
     MediaPlayer mediaPlayer;
@@ -30,10 +35,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, 0);
-        }
-
+        checkAndRequestPermissions();
 
         audioDurationTextView = findViewById(R.id.audio_duration_textview);
         songNameTextView = findViewById(R.id.song_name_textview);
@@ -53,23 +55,24 @@ public class MainActivity extends AppCompatActivity {
         pauseButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                mediaPlayer.pause();
+                if (mediaPlayer != null && mediaPlayer.isPlaying())
+                    mediaPlayer.pause();
             }
         });
-
 
         Button forwardButton = findViewById(R.id.forward_button);
         forwardButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                if (mediaPlayer == null) return;
+
                 int currentAudioPosition = mediaPlayer.getCurrentPosition();
                 int audioDuration = mediaPlayer.getDuration();
-                if (mediaPlayer.isPlaying() && currentAudioPosition <= audioDuration) {
+                if (mediaPlayer.isPlaying() && currentAudioPosition <= audioDuration - 3000) {
                     currentAudioPosition += 3000;
                     mediaPlayer.seekTo(currentAudioPosition);
                     audioCurrentTextView.setText(currentAudioPosition + "");
                 }
-
             }
         });
 
@@ -77,34 +80,45 @@ public class MainActivity extends AppCompatActivity {
         rewindButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                if (mediaPlayer == null) return;
+
                 int currentAudioPosition = mediaPlayer.getCurrentPosition();
                 if (mediaPlayer.isPlaying() && currentAudioPosition >= 3000) {
                     currentAudioPosition -= 3000;
-
                     mediaPlayer.seekTo(currentAudioPosition);
                     audioCurrentTextView.setText(currentAudioPosition + "");
                 }
             }
         });
 
+        Button saveButton = findViewById(R.id.save_button);
+        saveButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                saveFileToGallery();
+            }
+        });
 // mediaPlayer = MediaPlayer.create(this, R.raw.julius_marx_julius_marx_vices);
 //        if (getFilesFromGallery() == null) mediaPlayer = null;
 //        else
 //            mediaPlayer = MediaPlayer.create(this, getFilesFromGallery());
 
-        //mediaPlayer = getFilesFromGallery() == null ? null : MediaPlayer.create(this, getFilesFromGallery())
+        mediaPlayer = getFilesFromGallery() == null ? null : MediaPlayer.create(this, getFilesFromGallery());
         // ;
         Uri filePath = Uri.fromFile(
-                new File(getFilesDir().getPath() + "julius_marx_julius_marx_vices.mp3"));
+                new File(getFilesDir().getPath() + File.separator + "julius_marx_julius_marx_vices.mp3"));
 
-        mediaPlayer = MediaPlayer.create(this, filePath);
+        //mediaPlayer = MediaPlayer.create(this, filePath);
 
-        if (mediaPlayer != null)
-            audioDurationTextView.setText(mediaPlayer.getDuration() + "");
-        else
-            audioDurationTextView.setText(getFilesDir().getPath());
-
+        if (mediaPlayer != null) {
+            audioDurationTextView.setText(
+                    mediaPlayer.getDuration() + "");
+            songNameTextView.setText(
+                    "julius_marx_julius_marx_vices.mp3");
+        } else
+            audioDurationTextView.setText(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC).getPath());
     }
+
 
     private Uri getFilesFromGallery() {
         Uri collection;
@@ -120,9 +134,9 @@ public class MainActivity extends AppCompatActivity {
                 MediaStore.Audio.Media.DURATION,
                 //MediaStore.Audio.Media.SIZE
         };
-        String selection = null;
+        String selection = MediaStore.Audio.Media.DISPLAY_NAME + "== ?";
         //MediaStore.Audio.Media.DISPLAY_NAME  == ?";
-        String[] selectionArgs = null;
+        String[] selectionArgs = {"new song.mp3"};
         //new String[]{
 //                String.valueOf(TimeUnit.MILLISECONDS.convert(
 //                    5, TimeUnit.MINUTES))
@@ -167,5 +181,52 @@ public class MainActivity extends AppCompatActivity {
             }
         }
         return null;
+    }
+
+    private void saveFileToGallery() {
+        // Add a specific media item.
+        ContentResolver resolver = getApplicationContext()
+                .getContentResolver();
+
+// Find all audio files on the primary external storage device.
+        Uri audioCollection;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            audioCollection = MediaStore.Audio.Media
+                    .getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY);
+        } else {
+            audioCollection = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
+        }
+        MediaRecorder recorder = new MediaRecorder();
+// Publish a new song.
+        String newSongName = new SimpleDateFormat("dd-MM-yyyy-HH-mm-ss", Locale.US).format(System.currentTimeMillis()) + ".mp3";
+        newSongName = "new song.mp3";
+        ContentValues newSongDetails = new ContentValues();
+        newSongDetails.put(MediaStore.Audio.Media.DISPLAY_NAME,
+                newSongName);
+        newSongDetails.put(MediaStore.Audio.Media.MIME_TYPE, "audio/mpeg");
+        String directory = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC).toString();
+        //getExternalFilesDir(Environment.DIRECTORY_MUSIC);
+        newSongDetails.put(MediaStore.Audio.Media.DATA, directory + File.separator + newSongName);
+        resolver.insert(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, newSongDetails);
+// Keeps a handle to the new song's URI in case we need to modify it
+// later.
+
+    }
+
+    public boolean checkAndRequestPermissions() {
+        if ((ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE)
+                + (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
+                + (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE))))
+                == PackageManager.PERMISSION_GRANTED) {
+            return true;
+        } else {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                requestPermissions(new String[]{
+                        Manifest.permission.READ_EXTERNAL_STORAGE,
+                        Manifest.permission.RECORD_AUDIO,
+                        Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
+            }
+            return false;
+        }
     }
 }
