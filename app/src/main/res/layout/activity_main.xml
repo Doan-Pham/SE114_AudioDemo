@@ -30,38 +30,40 @@
         app:layout_constraintTop_toBottomOf="@+id/song_name_textview" />
 
     <LinearLayout
-        android:orientation="horizontal"
         android:id="@+id/audio_timestamps"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:layout_constraintBottom_toTopOf="@id/buttons_container"
         android:gravity="center"
+        android:orientation="horizontal"
+        app:layout_constraintBottom_toTopOf="@id/buttons_container"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/music_note_imageview" >
+        app:layout_constraintTop_toBottomOf="@id/music_note_imageview">
+
         <TextView
             android:id="@+id/audio_current_textview"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginRight="24dp"
             android:gravity="center"
-            android:textSize="20sp"
             android:text="00:00"
-            android:layout_marginRight="24dp"/>
+            android:textSize="20sp" />
+
         <TextView
             android:id="@+id/audio_duration_textview"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:gravity="center"
-            android:textSize="20sp"
-            android:text="99:00"/>
+            android:text="99:00"
+            android:textSize="20sp" />
     </LinearLayout>
 
-    <LinearLayout
+    <GridLayout
         android:id="@+id/buttons_container"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:columnCount="4"
         android:gravity="center"
-        android:orientation="horizontal"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -72,54 +74,36 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_margin="5dp"
-            android:text="Play"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintLeft_toLeftOf="parent"
-            app:layout_constraintRight_toLeftOf="@id/pause_button"
-            app:layout_constraintTop_toBottomOf="@id/music_note_imageview" />
+            android:text="Play" />
 
         <Button
             android:id="@+id/pause_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_margin="3dp"
-            android:layout_marginBottom="40dp"
-            android:text="Pause"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintLeft_toLeftOf="parent"
-            app:layout_constraintRight_toRightOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/music_note_imageview" />
+            android:text="Pause" />
 
         <Button
             android:id="@+id/forward_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_margin="5dp"
-            android:layout_marginBottom="40dp"
-            android:text="Forward"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintLeft_toLeftOf="parent"
-            app:layout_constraintRight_toRightOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/music_note_imageview" />
+            android:text="Forward" />
 
         <Button
             android:id="@+id/rewind_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_margin="5dp"
-            android:layout_marginBottom="40dp"
-            android:text="Rewind"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintLeft_toLeftOf="parent"
-            app:layout_constraintRight_toRightOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/music_note_imageview" />
-    </LinearLayout>
+            android:text="Rewind" />
+
+        <Button
+            android:id="@+id/save_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="5dp"
+            android:text="Save" />
+    </GridLayout>
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>
