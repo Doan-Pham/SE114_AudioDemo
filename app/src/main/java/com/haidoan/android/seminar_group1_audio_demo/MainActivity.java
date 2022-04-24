@@ -2,19 +2,19 @@ package com.haidoan.android.seminar_group1_audio_demo;
 
 import android.Manifest;
 import android.content.ContentResolver;
-import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.pm.PackageManager;
-import android.database.Cursor;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.MediaStore;
-import android.util.Log;
 import android.widget.Button;
 import android.widget.TextView;
 
+import androidx.activity.result.ActivityResultCallback;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 
@@ -43,6 +43,14 @@ public class MainActivity extends AppCompatActivity {
     Button stopButton;
     Button saveButton;
 
+    ActivityResultLauncher<String> pickerLauncher = registerForActivityResult(new ActivityResultContracts.GetContent(),
+            new ActivityResultCallback<Uri>() {
+                @Override
+                public void onActivityResult(Uri result) {
+                    if (result != null)
+                        mediaPlayer = MediaPlayer.create(getApplicationContext(), result);
+                }
+            });
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
@@ -59,8 +67,8 @@ public class MainActivity extends AppCompatActivity {
             mediaPlayer = MediaPlayer.create(this, R.raw.song2);
 
             //Load audio from gallery
-//            Uri audioUri = getAudioFromGallery();
-//            mediaPlayer = MediaPlayer.create(this, audioUri);
+
+            pickerLauncher.launch("audio/*");
 
             //Load audio from file
 //            File filePath = new File(
@@ -139,63 +147,6 @@ public class MainActivity extends AppCompatActivity {
             //saveAudioToGallery();
             saveAudioToFile();
         });
-    }
-
-    private Uri getAudioFromGallery() {
-
-        //The collection to query in
-        Uri audioCollection;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            audioCollection = MediaStore.Audio.Media.getContentUri(MediaStore.VOLUME_EXTERNAL);
-        } else {
-            audioCollection = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
-        }
-        //Columns to query for
-        String[] projection = new String[]{
-                MediaStore.Audio.Media._ID,
-                MediaStore.Audio.Media.DISPLAY_NAME,
-                MediaStore.Audio.Media.DURATION,
-        };
-        //Selection condition
-        String selection = MediaStore.Audio.Media.DISPLAY_NAME + "= ?";
-        //Arguments for selection condition
-        String[] selectionArgs = {"test2.mp3"};
-        String sortOrder = MediaStore.Audio.Media.DISPLAY_NAME + " ASC";
-
-        try (Cursor cursor = getApplicationContext().getContentResolver().query(
-                audioCollection,
-                projection,
-                selection,
-                selectionArgs,
-                sortOrder
-        )) {
-            //Get indexes of data columns
-            int idColumnIndex = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media._ID);
-            int nameColumnIndex = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DISPLAY_NAME);
-            int durationColumnIndex = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DURATION);
-
-            if (cursor.getCount() < 1) {
-                Log.d("Error"
-                        , "Cannot load audio file from gallery or file doesn't exist");
-                return null;
-            }
-            while (cursor.moveToNext()) {
-
-                //Get data
-                long id = cursor.getLong(idColumnIndex);
-                String name = cursor.getString(nameColumnIndex);
-                int duration = cursor.getInt(durationColumnIndex);
-
-                //Get the Uri for the audio file returned by the query
-                Uri audioUri = ContentUris.withAppendedId(
-                        MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, id);
-
-                audioNameTextView.setText(name);
-                audioDurationTextView.setText(convertDurationToAudioTime(duration));
-                return audioUri;
-            }
-        }
-        return null;
     }
 
     private void saveAudioToGallery() {
