@@ -65,9 +65,9 @@ public class MainActivity extends AppCompatActivity {
         //Load audio from resource
         mediaPlayer = MediaPlayer.create(this, R.raw.song2);
 
-//        //Load audio from gallery
-//        Uri audioUri = getAudioFromGallery();
-//        mediaPlayer = audioUri == null ? null : MediaPlayer.create(this, audioUri);
+        //Load audio from gallery
+        Uri audioUri = getAudioFromGallery();
+        mediaPlayer = MediaPlayer.create(this, audioUri);
 
         //Load audio from file
 //            File filePath = new File(
@@ -124,46 +124,8 @@ public class MainActivity extends AppCompatActivity {
 
         stopButton = findViewById(R.id.stop_button);
         stopButton.setOnClickListener(view -> {
-            mediaPlayer.stop();
-            mediaPlayer.release();
-            mediaPlayer = null;
-        });
-
-        recordButton = findViewById(R.id.record_button);
-        recordButton.setOnClickListener(view -> {
-            if (mediaPlayer != null && mediaPlayer.isPlaying()) mediaPlayer.pause();
-            saveAudioToGallery();
-
-            File fileDirectory = new File(
-                    getFilesDir().getAbsolutePath() + "/files/");
-            if (!fileDirectory.exists()) fileDirectory.mkdirs();
-            File filePath = new File(fileDirectory + "/song2.mp3");
-
-            if (filePath != null) {
-                mediaRecorder = new MediaRecorder();
-                mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-                mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
-                mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
-                mediaRecorder.setOutputFile(filePath);
-                mediaRecorder.setAudioChannels(1);
-                try {
-                    mediaRecorder.prepare();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                mediaRecorder.start();
-            }
-        });
-
-        stopRecordButton = findViewById(R.id.stop_record_button);
-        stopRecordButton.setOnClickListener(view -> {
-            saveFileToGallery();
-            return;
-//            if (mediaRecorder != null) {
-//                mediaRecorder.stop();
-//                mediaRecorder.release();
-//                mediaRecorder = null;
-//            }
+            if (mediaPlayer != null)
+                mediaPlayer.stop();
         });
     }
 
@@ -273,7 +235,7 @@ public class MainActivity extends AppCompatActivity {
                     MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
         }
 
-        String newAudioName = "test.mp3";
+        String newAudioName = "test1.mp3";
 
         String externalMusicDirectory = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC).toString();
 
@@ -288,10 +250,12 @@ public class MainActivity extends AppCompatActivity {
         int i = 0;
         int bufferSize = 512;
         byte[] buffer = new byte[bufferSize];
-        InputStream inputStream = getResources().openRawResource(R.raw.song2);
 
+        InputStream inputStream = getResources().openRawResource(R.raw.song2);
+        //FileOutputStream outputStream = new FileOutputStream();
         try {
             OutputStream outputStream = resolver.openOutputStream(newAudioUri, "w");
+
             while ((i = inputStream.read(buffer)) != -1)
                 outputStream.write(buffer, 0, i);
             outputStream.close();
