@@ -7,12 +7,9 @@ import android.content.ContentValues;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.media.MediaPlayer;
-import android.media.MediaRecorder;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Environment;
-import android.os.ParcelFileDescriptor;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.widget.Button;
@@ -22,58 +19,61 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 
 import java.io.File;
-import java.io.FileNotFoundException;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.text.SimpleDateFormat;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
 public class MainActivity extends AppCompatActivity {
     MediaPlayer mediaPlayer;
-    MediaRecorder mediaRecorder;
 
     TextView audioNameTextView;
     TextView audioDurationTextView;
     TextView audioCurrentTextView;
 
+    Button loadButton;
     Button playButton;
     Button pauseButton;
     Button forwardButton;
     Button rewindButton;
     Button audioCurrentButton;
     Button stopButton;
-    Button recordButton;
-    Button stopRecordButton;
-
-    ParcelFileDescriptor filePathForSaving;
+    Button saveButton;
 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        while (!checkAndRequestPermissions()) {
-            checkAndRequestPermissions();
-        }
+        checkAndRequestPermissions();
 
         audioDurationTextView = findViewById(R.id.audio_duration_textview);
-        audioNameTextView = findViewById(R.id.song_name_textview);
+        audioNameTextView = findViewById(R.id.audio_name_textview);
         audioCurrentTextView = findViewById(R.id.audio_current_textview);
 
+        loadButton = findViewById(R.id.load_button);
+        loadButton.setOnClickListener(view -> {
+            //Load audio from resource
+            mediaPlayer = MediaPlayer.create(this, R.raw.song2);
 
-        //Load audio from resource
-        mediaPlayer = MediaPlayer.create(this, R.raw.song2);
+            //Load audio from gallery
+//            Uri audioUri = getAudioFromGallery();
+//            mediaPlayer = MediaPlayer.create(this, audioUri);
 
-        //Load audio from gallery
-        Uri audioUri = getAudioFromGallery();
-        mediaPlayer = MediaPlayer.create(this, audioUri);
-
-        //Load audio from file
+            //Load audio from file
 //            File filePath = new File(
-//                    getFilesDir().getPath() + File.separator + "song2.mp3");
+//                    getFilesDir().getPath() + "/" + "inputDirectory" + "/" + "song2.mp3");
 //            Uri filePathAsUri = Uri.fromFile(filePath);
 //            mediaPlayer = MediaPlayer.create(this, filePathAsUri);
+
+            if (mediaPlayer != null) {
+                audioNameTextView.setText("Load audio successful");
+                audioCurrentTextView.setText("00:00");
+                audioDurationTextView.setText(convertDurationToAudioTime(mediaPlayer.getDuration()));
+            }
+        });
 
         playButton = findViewById(R.id.play_button);
         playButton.setOnClickListener(view -> {
@@ -124,8 +124,20 @@ public class MainActivity extends AppCompatActivity {
 
         stopButton = findViewById(R.id.stop_button);
         stopButton.setOnClickListener(view -> {
-            if (mediaPlayer != null)
+            if (mediaPlayer != null) {
                 mediaPlayer.stop();
+                mediaPlayer.release();
+                mediaPlayer = null;
+                audioNameTextView.setText("No name");
+                audioCurrentTextView.setText("-01:00");
+                audioDurationTextView.setText("-01:00");
+            }
+        });
+
+        saveButton = findViewById(R.id.save_button);
+        saveButton.setOnClickListener(view -> {
+            //saveAudioToGallery();
+            saveAudioToFile();
         });
     }
 
@@ -138,7 +150,6 @@ public class MainActivity extends AppCompatActivity {
         } else {
             audioCollection = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
         }
-
         //Columns to query for
         String[] projection = new String[]{
                 MediaStore.Audio.Media._ID,
@@ -146,11 +157,9 @@ public class MainActivity extends AppCompatActivity {
                 MediaStore.Audio.Media.DURATION,
         };
         //Selection condition
-        String selection = MediaStore.Audio.Media.DISPLAY_NAME + "== ?";
-
+        String selection = MediaStore.Audio.Media.DISPLAY_NAME + "= ?";
         //Arguments for selection condition
-        String[] selectionArgs = {"24-04-2022-01-27-10.mp3"};
-
+        String[] selectionArgs = {"test2.mp3"};
         String sortOrder = MediaStore.Audio.Media.DISPLAY_NAME + " ASC";
 
         try (Cursor cursor = getApplicationContext().getContentResolver().query(
@@ -165,7 +174,7 @@ public class MainActivity extends AppCompatActivity {
             int nameColumnIndex = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DISPLAY_NAME);
             int durationColumnIndex = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DURATION);
 
-            if (cursor.getCount() > 1) {
+            if (cursor.getCount() < 1) {
                 Log.d("Error"
                         , "Cannot load audio file from gallery or file doesn't exist");
                 return null;
@@ -202,59 +211,78 @@ public class MainActivity extends AppCompatActivity {
                     MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
         }
 
-        String newAudioName = new SimpleDateFormat("dd-MM-yyyy-HH-mm-ss", Locale.getDefault())
-                .format(System.currentTimeMillis()) + ".mp3";
+        String newAudioName = "gallerySavedSong2.mp3";
 
-        String externalMusicDirectory = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC).toString();
 
         ContentValues newSongDetails = new ContentValues();
         newSongDetails.put(MediaStore.Audio.Media.DISPLAY_NAME, newAudioName);
         newSongDetails.put(MediaStore.Audio.Media.MIME_TYPE, "audio/mpeg");
-        newSongDetails.put(MediaStore.Audio.Media.DATA
-                , externalMusicDirectory + File.separator + newAudioName);
+
+        //This is needed in API < Android Q (API 29)
+//        String externalMusicDirectory = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC).toString();
+//        newSongDetails.put(MediaStore.Audio.Media.DATA
+//                , externalMusicDirectory + "/" + newAudioName);
 
         Uri newAudioUri = resolver.insert(audioCollection, newSongDetails);
 
-        try {
-            filePathForSaving = resolver.openFileDescriptor(newAudioUri, "w");
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void saveFileToGallery() {
-
-        ContentResolver resolver = getApplicationContext().getContentResolver();
-
-        Uri audioCollection;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            audioCollection =
-                    MediaStore.Audio.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY);
-        } else {
-            audioCollection =
-                    MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
-        }
-
-        String newAudioName = "test1.mp3";
-
-        String externalMusicDirectory = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC).toString();
-
-        ContentValues newSongDetails = new ContentValues();
-        newSongDetails.put(MediaStore.Audio.Media.DISPLAY_NAME, newAudioName);
-        newSongDetails.put(MediaStore.Audio.Media.MIME_TYPE, "audio/mpeg");
-        newSongDetails.put(MediaStore.Audio.Media.DATA
-                , externalMusicDirectory + File.separator + newAudioName);
-
-        Uri newAudioUri = resolver.insert(audioCollection, newSongDetails);
-
+        //Create a buffer for transferring data between InputStream and OutputStream
+        // The "i" variable is for storing result from reading InputStream
         int i = 0;
         int bufferSize = 512;
         byte[] buffer = new byte[bufferSize];
 
-        InputStream inputStream = getResources().openRawResource(R.raw.song2);
-        //FileOutputStream outputStream = new FileOutputStream();
         try {
+            //Create an InputStream from resource
+            InputStream inputStream = getResources().openRawResource(R.raw.song2);
+
+            //Create an OutputStream with ContentResolver
             OutputStream outputStream = resolver.openOutputStream(newAudioUri, "w");
+
+            //Read from InputStream into buffer then write to OutputStream
+            while ((i = inputStream.read(buffer)) != -1)
+                outputStream.write(buffer, 0, i);
+
+            inputStream.close();
+            outputStream.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    private void saveAudioToFile() {
+        // Initialize the input file path
+        File inputDirectory = new File(
+                getFilesDir() + "/" + "inputDirectory" + "/");
+        if (!inputDirectory.exists()) {
+            inputDirectory.mkdir();
+        }
+        File inputAudioFile = new File(inputDirectory + "/" + "song2.mp3");
+
+        FileInputStream inputStream = null;
+
+
+        //Initialize the output file path for saving audio to
+        String newAudioName = "filedSaveSong2.mp3";
+        File outputDirectory = new File(
+                getFilesDir() + "/" + "outputDirectory" + "/");
+        if (!outputDirectory.exists()) {
+            outputDirectory.mkdir();
+        }
+        File outputAudioFile = new File(outputDirectory + "/" + newAudioName);
+
+        //Create a buffer for transferring data between InputStream and OutputStream
+        // The "i" variable is for storing result from reading InputStream
+        int i = 0;
+        int bufferSize = 512;
+        byte[] buffer = new byte[bufferSize];
+
+        try {
+            // Create an InputStream from file path
+            inputStream = new FileInputStream(inputAudioFile);
+
+            // Create an OutputStream from file path
+            FileOutputStream outputStream = new FileOutputStream(outputAudioFile);
 
             while ((i = inputStream.read(buffer)) != -1)
                 outputStream.write(buffer, 0, i);
@@ -264,7 +292,9 @@ public class MainActivity extends AppCompatActivity {
         }
 
         try {
-            inputStream.close();
+            if (inputStream != null) {
+                inputStream.close();
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -272,24 +302,14 @@ public class MainActivity extends AppCompatActivity {
 
     private boolean checkAndRequestPermissions() {
         if ((ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE)
-                + (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
-                + (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE))))
+                + (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)))
                 == PackageManager.PERMISSION_GRANTED) {
             return true;
         } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            if (shouldShowRequestPermissionRationale(Manifest.permission.RECORD_AUDIO)) {
-                requestPermissions(new String[]{
-                        Manifest.permission.READ_EXTERNAL_STORAGE,
-                        Manifest.permission.RECORD_AUDIO,
-                        Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
-                return false;
-            } else {
-                requestPermissions(new String[]{
-                        Manifest.permission.READ_EXTERNAL_STORAGE,
-                        Manifest.permission.RECORD_AUDIO,
-                        Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
-                return false;
-            }
+            requestPermissions(new String[]{
+                    Manifest.permission.READ_EXTERNAL_STORAGE,
+                    Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
+            return false;
         }
         return false;
     }
