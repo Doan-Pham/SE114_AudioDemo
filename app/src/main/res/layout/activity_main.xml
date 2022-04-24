@@ -103,11 +103,13 @@
             android:layout_height="wrap_content"
             android:layout_margin="5dp"
             android:text="Save" />
+
         <Button
             android:id="@+id/record_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_margin="5dp"
+            android:backgroundTint="@color/teal_700"
             android:text="Record" />
 
         <Button
@@ -116,6 +118,7 @@
             android:layout_height="wrap_content"
             android:layout_rowSpan="4"
             android:layout_margin="5dp"
+            android:backgroundTint="@color/teal_700"
             android:text="Stop record" />
     </GridLayout>
 
