@@ -28,7 +28,7 @@ import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
 public class MainActivity extends AppCompatActivity {
-    MediaPlayer mediaPlayer;
+    MediaPlayer mediaPlayer = null;
 
     TextView audioNameTextView;
     TextView audioDurationTextView;
@@ -43,7 +43,8 @@ public class MainActivity extends AppCompatActivity {
     Button stopButton;
     Button saveButton;
 
-    ActivityResultLauncher<String> pickerLauncher = registerForActivityResult(new ActivityResultContracts.GetContent(),
+    ActivityResultLauncher<String> pickerLauncher = registerForActivityResult(
+            new ActivityResultContracts.GetContent(),
             new ActivityResultCallback<Uri>() {
                 @Override
                 public void onActivityResult(Uri result) {
@@ -51,6 +52,7 @@ public class MainActivity extends AppCompatActivity {
                         mediaPlayer = MediaPlayer.create(getApplicationContext(), result);
                 }
             });
+
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
@@ -237,18 +239,13 @@ public class MainActivity extends AppCompatActivity {
 
             while ((i = inputStream.read(buffer)) != -1)
                 outputStream.write(buffer, 0, i);
+
             outputStream.close();
+            inputStream.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
 
-        try {
-            if (inputStream != null) {
-                inputStream.close();
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 
     private boolean checkAndRequestPermissions() {
