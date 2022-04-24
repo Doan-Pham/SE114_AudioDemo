@@ -12,6 +12,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.ParcelFileDescriptor;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
@@ -22,14 +23,27 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
     MediaPlayer mediaPlayer;
+    MediaRecorder mediaRecorder;
+
     TextView songNameTextView;
     TextView audioDurationTextView;
     TextView audioCurrentTextView;
+
+    Button playButton;
+    Button pauseButton;
+    Button forwardButton;
+    Button rewindButton;
+    Button recordButton;
+    Button stopRecordButton;
+
+    ParcelFileDescriptor filePathForSaving;
 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -41,7 +55,7 @@ public class MainActivity extends AppCompatActivity {
         songNameTextView = findViewById(R.id.song_name_textview);
         audioCurrentTextView = findViewById(R.id.audio_current_textview);
 
-        Button playButton = findViewById(R.id.play_button);
+        playButton = findViewById(R.id.play_button);
         playButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -51,7 +65,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        Button pauseButton = findViewById(R.id.pause_button);
+        pauseButton = findViewById(R.id.pause_button);
         pauseButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -60,7 +74,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        Button forwardButton = findViewById(R.id.forward_button);
+        forwardButton = findViewById(R.id.forward_button);
         forwardButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -76,7 +90,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        Button rewindButton = findViewById(R.id.rewind_button);
+        rewindButton = findViewById(R.id.rewind_button);
         rewindButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -98,6 +112,41 @@ public class MainActivity extends AppCompatActivity {
                 saveFileToGallery();
             }
         });
+
+        recordButton = findViewById(R.id.record_button);
+        recordButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (mediaPlayer != null && mediaPlayer.isPlaying()) mediaPlayer.pause();
+                if (filePathForSaving != null) {
+                    mediaRecorder = new MediaRecorder();
+                    mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+                    mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
+                    mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
+                    mediaRecorder.setOutputFile(filePathForSaving.getFileDescriptor());
+                    mediaRecorder.setAudioChannels(1);
+                    try {
+                        mediaRecorder.prepare();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    mediaRecorder.start();
+                }
+            }
+        });
+
+        stopRecordButton = findViewById(R.id.stop_record_button);
+        stopRecordButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (mediaRecorder != null) {
+                    mediaRecorder.stop();
+                    mediaRecorder.release();
+                    mediaRecorder = null;
+                }
+            }
+        });
+
 // mediaPlayer = MediaPlayer.create(this, R.raw.julius_marx_julius_marx_vices);
 //        if (getFilesFromGallery() == null) mediaPlayer = null;
 //        else
@@ -199,7 +248,7 @@ public class MainActivity extends AppCompatActivity {
         MediaRecorder recorder = new MediaRecorder();
 // Publish a new song.
         String newSongName = new SimpleDateFormat("dd-MM-yyyy-HH-mm-ss", Locale.US).format(System.currentTimeMillis()) + ".mp3";
-        newSongName = "new song.mp3";
+        //newSongName = "new song.mp3";
         ContentValues newSongDetails = new ContentValues();
         newSongDetails.put(MediaStore.Audio.Media.DISPLAY_NAME,
                 newSongName);
@@ -207,10 +256,14 @@ public class MainActivity extends AppCompatActivity {
         String directory = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC).toString();
         //getExternalFilesDir(Environment.DIRECTORY_MUSIC);
         newSongDetails.put(MediaStore.Audio.Media.DATA, directory + File.separator + newSongName);
-        resolver.insert(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, newSongDetails);
+        Uri uri = resolver.insert(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, newSongDetails);
 // Keeps a handle to the new song's URI in case we need to modify it
 // later.
-
+        try {
+            filePathForSaving = resolver.openFileDescriptor(uri, "w");
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
     }
 
     public boolean checkAndRequestPermissions() {
@@ -219,14 +272,21 @@ public class MainActivity extends AppCompatActivity {
                 + (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE))))
                 == PackageManager.PERMISSION_GRANTED) {
             return true;
-        } else {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                requestPermissions(new String[]{
-                        Manifest.permission.READ_EXTERNAL_STORAGE,
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (shouldShowRequestPermissionRationale(Manifest.permission.CAMERA)) {
+                requestPermissions(new String[]{Manifest.permission.CAMERA,
                         Manifest.permission.RECORD_AUDIO,
                         Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
+                return false;
+            } else {
+                requestPermissions(new String[]{Manifest.permission.CAMERA,
+                        Manifest.permission.RECORD_AUDIO,
+                        Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
+                return false;
             }
-            return false;
         }
+        return false;
     }
+
+
 }
