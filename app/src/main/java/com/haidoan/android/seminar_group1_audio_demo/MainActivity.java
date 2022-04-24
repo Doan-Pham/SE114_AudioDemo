@@ -11,6 +11,7 @@ import android.os.Bundle;
 import android.provider.MediaStore;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultCallback;
 import androidx.activity.result.ActivityResultLauncher;
@@ -69,7 +70,6 @@ public class MainActivity extends AppCompatActivity {
             mediaPlayer = MediaPlayer.create(this, R.raw.song2);
 
             //Load audio from gallery
-
             pickerLauncher.launch("audio/*");
 
             //Load audio from file
@@ -82,6 +82,8 @@ public class MainActivity extends AppCompatActivity {
                 audioNameTextView.setText("Load audio successful");
                 audioCurrentTextView.setText("00:00");
                 audioDurationTextView.setText(convertDurationToAudioTime(mediaPlayer.getDuration()));
+            } else {
+                Toast.makeText(this, "Failed to load audio", Toast.LENGTH_SHORT).show();
             }
         });
 
@@ -197,8 +199,10 @@ public class MainActivity extends AppCompatActivity {
 
             inputStream.close();
             outputStream.close();
+
+            Toast.makeText(this, "Audio saved", Toast.LENGTH_SHORT).show();
         } catch (IOException e) {
-            e.printStackTrace();
+            Toast.makeText(this, "Failed to save audio", Toast.LENGTH_SHORT).show();
         }
 
     }
@@ -242,8 +246,10 @@ public class MainActivity extends AppCompatActivity {
 
             outputStream.close();
             inputStream.close();
+
+            Toast.makeText(this, "Audio saved", Toast.LENGTH_SHORT).show();
         } catch (IOException e) {
-            e.printStackTrace();
+            Toast.makeText(this, "Failed to save audio", Toast.LENGTH_SHORT).show();
         }
 
     }
