@@ -25,22 +25,16 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.Locale;
-import java.util.concurrent.TimeUnit;
 
 public class MainActivity extends AppCompatActivity {
+
     MediaPlayer mediaPlayer = null;
 
     TextView audioNameTextView;
-    TextView audioDurationTextView;
-    TextView audioCurrentTextView;
 
     Button loadButton;
     Button playButton;
     Button pauseButton;
-    Button forwardButton;
-    Button rewindButton;
-    Button audioCurrentButton;
     Button stopButton;
     Button saveButton;
 
@@ -49,8 +43,16 @@ public class MainActivity extends AppCompatActivity {
             new ActivityResultCallback<Uri>() {
                 @Override
                 public void onActivityResult(Uri result) {
-                    if (result != null)
+                    if (result != null) {
                         mediaPlayer = MediaPlayer.create(getApplicationContext(), result);
+
+                        if (mediaPlayer != null) {
+                            audioNameTextView.setText("Load audio successful");
+                        } else {
+                            Toast.makeText(getApplicationContext()
+                                    , "Failed to load audio", Toast.LENGTH_SHORT).show();
+                        }
+                    }
                 }
             });
 
@@ -60,39 +62,19 @@ public class MainActivity extends AppCompatActivity {
 
         checkAndRequestPermissions();
 
-        audioDurationTextView = findViewById(R.id.audio_duration_textview);
         audioNameTextView = findViewById(R.id.audio_name_textview);
-        audioCurrentTextView = findViewById(R.id.audio_current_textview);
 
         loadButton = findViewById(R.id.load_button);
         loadButton.setOnClickListener(view -> {
-            //Load audio from resource
-            mediaPlayer = MediaPlayer.create(this, R.raw.song2);
-
-            //Load audio from gallery
-            pickerLauncher.launch("audio/*");
-
-            //Load audio from file
-//            File filePath = new File(
-//                    getFilesDir().getPath() + "/" + "inputDirectory" + "/" + "song2.mp3");
-//            Uri filePathAsUri = Uri.fromFile(filePath);
-//            mediaPlayer = MediaPlayer.create(this, filePathAsUri);
-
-            if (mediaPlayer != null) {
-                audioNameTextView.setText("Load audio successful");
-                audioCurrentTextView.setText("00:00");
-                audioDurationTextView.setText(convertDurationToAudioTime(mediaPlayer.getDuration()));
-            } else {
-                Toast.makeText(this, "Failed to load audio", Toast.LENGTH_SHORT).show();
-            }
+//            loadAudioFromResource();
+            loadAudioFromGallery();
+//            loadAudioFromFile();
         });
 
         playButton = findViewById(R.id.play_button);
         playButton.setOnClickListener(view -> {
             if (mediaPlayer != null) {
                 mediaPlayer.start();
-                audioDurationTextView.setText(
-                        convertDurationToAudioTime(mediaPlayer.getDuration()));
             }
         });
 
@@ -102,38 +84,6 @@ public class MainActivity extends AppCompatActivity {
                 mediaPlayer.pause();
         });
 
-        forwardButton = findViewById(R.id.forward_button);
-        forwardButton.setOnClickListener(view -> {
-            if (mediaPlayer != null) {
-                int currentAudioPosition = mediaPlayer.getCurrentPosition();
-                int audioDuration = mediaPlayer.getDuration();
-                if (mediaPlayer.isPlaying() && currentAudioPosition <= audioDuration - 3000) {
-                    currentAudioPosition += 3000;
-                    mediaPlayer.seekTo(currentAudioPosition);
-                    audioCurrentTextView.setText(convertDurationToAudioTime(currentAudioPosition));
-                }
-            }
-        });
-
-        rewindButton = findViewById(R.id.rewind_button);
-        rewindButton.setOnClickListener(view -> {
-            if (mediaPlayer != null) {
-                int currentAudioPosition = mediaPlayer.getCurrentPosition();
-                if (mediaPlayer.isPlaying() && currentAudioPosition >= 3000) {
-                    currentAudioPosition -= 3000;
-                    mediaPlayer.seekTo(currentAudioPosition);
-                    audioCurrentTextView.setText(convertDurationToAudioTime(currentAudioPosition));
-                }
-            }
-        });
-
-        audioCurrentButton = findViewById(R.id.audio_current_button);
-        audioCurrentButton.setOnClickListener(view -> {
-            if (mediaPlayer != null)
-                audioCurrentTextView.setText(
-                        convertDurationToAudioTime(mediaPlayer.getCurrentPosition()));
-        });
-
         stopButton = findViewById(R.id.stop_button);
         stopButton.setOnClickListener(view -> {
             if (mediaPlayer != null) {
@@ -141,44 +91,74 @@ public class MainActivity extends AppCompatActivity {
                 mediaPlayer.release();
                 mediaPlayer = null;
                 audioNameTextView.setText("No name");
-                audioCurrentTextView.setText("-01:00");
-                audioDurationTextView.setText("-01:00");
             }
         });
 
         saveButton = findViewById(R.id.save_button);
         saveButton.setOnClickListener(view -> {
-            //saveAudioToGallery();
-            saveAudioToFile();
+            saveAudioToGallery();
+            //saveAudioToFile();
         });
+    }
+
+    private void loadAudioFromResource() {
+        //Load audio from resource
+        mediaPlayer = MediaPlayer.create(this, R.raw.song2);
+    }
+
+    private void loadAudioFromGallery() {
+        pickerLauncher.launch("audio/*");
+    }
+
+    private void loadAudioFromFile() {
+        //Initialize the input file path
+        File filePath = new File(getFilesDir().getPath()
+                + "/" + "inputDirectory" + "/" + "song2.mp3");
+
+        Uri filePathAsUri = Uri.fromFile(filePath);
+        mediaPlayer = MediaPlayer.create(this, filePathAsUri);
+
+        if (mediaPlayer != null) {
+            audioNameTextView.setText("Load audio successful");
+        } else {
+            Toast.makeText(this, "Failed to load audio", Toast.LENGTH_SHORT).show();
+        }
     }
 
     private void saveAudioToGallery() {
 
+        //ContentResolver is a class to interact with ContentProvider - a class that manages acces
+        //to a central repository of data
         ContentResolver resolver = getApplicationContext().getContentResolver();
 
-        Uri audioCollection;
+        //MediaStore is an API for applications to interact with a device's media
+        //URI (Uniform Resource Identifier) is a string of characters that identifies a logical
+        //or physical resource
+
+        Uri audioCollectionUri;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            audioCollection =
+            audioCollectionUri =
                     MediaStore.Audio.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY);
         } else {
-            audioCollection =
+            audioCollectionUri =
                     MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
         }
 
         String newAudioName = "gallerySavedSong2.mp3";
 
-
+        //ContentValues is used to store a set of values that the ContentResolver can process.
         ContentValues newSongDetails = new ContentValues();
         newSongDetails.put(MediaStore.Audio.Media.DISPLAY_NAME, newAudioName);
         newSongDetails.put(MediaStore.Audio.Media.MIME_TYPE, "audio/mpeg");
 
         //This is needed in API < Android Q (API 29)
-//        String externalMusicDirectory = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC).toString();
+//        String externalMusicDirectory = Environment.getExternalStoragePublicDirectory
+//        (Environment.DIRECTORY_MUSIC).toString();
+
 //        newSongDetails.put(MediaStore.Audio.Media.DATA
 //                , externalMusicDirectory + "/" + newAudioName);
 
-        Uri newAudioUri = resolver.insert(audioCollection, newSongDetails);
+        Uri newAudioUri = resolver.insert(audioCollectionUri, newSongDetails);
 
         //Create a buffer for transferring data between InputStream and OutputStream
         // The "i" variable is for storing result from reading InputStream
@@ -216,8 +196,6 @@ public class MainActivity extends AppCompatActivity {
         }
         File inputAudioFile = new File(inputDirectory + "/" + "song2.mp3");
 
-        FileInputStream inputStream = null;
-
 
         //Initialize the output file path for saving audio to
         String newAudioName = "filedSaveSong2.mp3";
@@ -236,7 +214,7 @@ public class MainActivity extends AppCompatActivity {
 
         try {
             // Create an InputStream from file path
-            inputStream = new FileInputStream(inputAudioFile);
+            FileInputStream inputStream = new FileInputStream(inputAudioFile);
 
             // Create an OutputStream from file path
             FileOutputStream outputStream = new FileOutputStream(outputAudioFile);
@@ -266,14 +244,5 @@ public class MainActivity extends AppCompatActivity {
             return false;
         }
         return false;
-    }
-
-    private String convertDurationToAudioTime(int duration) {
-        return String.format(
-                Locale.US,
-                "%02d:%02d",
-                TimeUnit.MILLISECONDS.toMinutes(duration),
-                TimeUnit.MILLISECONDS.toSeconds(duration)
-        );
     }
 }
