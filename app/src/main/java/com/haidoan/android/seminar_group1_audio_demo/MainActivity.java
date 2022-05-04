@@ -1,14 +1,11 @@
 package com.haidoan.android.seminar_group1_audio_demo;
 
 import android.Manifest;
-import android.content.ContentResolver;
-import android.content.ContentValues;
 import android.content.pm.PackageManager;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.provider.MediaStore;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -20,11 +17,6 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -36,7 +28,6 @@ public class MainActivity extends AppCompatActivity {
     Button playButton;
     Button pauseButton;
     Button stopButton;
-    Button saveButton;
 
     ActivityResultLauncher<String> pickerLauncher = registerForActivityResult(
             new ActivityResultContracts.GetContent(),
