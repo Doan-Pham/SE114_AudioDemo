@@ -38,7 +38,7 @@
         android:columnCount="4"
         android:gravity="center"
         android:useDefaultMargins="true"
-        app:layout_constraintBottom_toTopOf="@id/second_buttons_container"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/music_note_imageview">
@@ -63,36 +63,14 @@
             android:layout_height="wrap_content"
             android:layout_margin="3dp"
             android:text="Pause" />
-
-    </LinearLayout>
-
-    <LinearLayout
-        android:id="@+id/second_buttons_container"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:columnCount="4"
-        android:gravity="center"
-        android:useDefaultMargins="true"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/first_buttons_container">
-
         <Button
             android:id="@+id/stop_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_margin="3dp"
             android:text="Stop" />
-
-        <Button
-            android:id="@+id/save_button"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:backgroundTint="@color/teal_700"
-            android:padding="0dp"
-            android:text="Save" />
     </LinearLayout>
+
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

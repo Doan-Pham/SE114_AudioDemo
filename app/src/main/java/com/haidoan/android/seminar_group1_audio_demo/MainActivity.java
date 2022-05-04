@@ -94,11 +94,6 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        saveButton = findViewById(R.id.save_button);
-        saveButton.setOnClickListener(view -> {
-            saveAudioToGallery();
-            //saveAudioToFile();
-        });
     }
 
     private void loadAudioFromResource() {
@@ -127,113 +122,6 @@ public class MainActivity extends AppCompatActivity {
         } else {
             Toast.makeText(this, "Failed to load audio", Toast.LENGTH_SHORT).show();
         }
-    }
-
-    private void saveAudioToGallery() {
-
-        //ContentResolver is a class to interact with ContentProvider - a class that manages access
-        //to a central repository of data
-        ContentResolver resolver = getApplicationContext().getContentResolver();
-
-        //MediaStore is an API for applications to interact with a device's media
-        //URI (Uniform Resource Identifier) is a string of characters that identifies a logical
-        //or physical resource
-
-        Uri audioCollectionUri;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            audioCollectionUri =
-                    MediaStore.Audio.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY);
-        } else {
-            audioCollectionUri =
-                    MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
-        }
-
-        String newAudioName = "gallerySavedSong2.mp3";
-
-        //ContentValues is used to store a set of values that the ContentResolver can process.
-        ContentValues newSongDetails = new ContentValues();
-        newSongDetails.put(MediaStore.Audio.Media.DISPLAY_NAME, newAudioName);
-        newSongDetails.put(MediaStore.Audio.Media.MIME_TYPE, "audio/mpeg");
-
-        //This is needed in API < Android Q (API 29)
-//        String externalMusicDirectory = Environment.getExternalStoragePublicDirectory
-//        (Environment.DIRECTORY_MUSIC).toString();
-
-//        newSongDetails.put(MediaStore.Audio.Media.DATA
-//                , externalMusicDirectory + "/" + newAudioName);
-
-        Uri newAudioUri = resolver.insert(audioCollectionUri, newSongDetails);
-
-        // Create a buffer for transferring data between InputStream and OutputStream
-        // The "i" variable is for storing the number of bytes read from InputStream
-        int i = 0;
-        int bufferSize = 512;
-        byte[] buffer = new byte[bufferSize];
-
-        try {
-            //Create an InputStream from resource
-            InputStream inputStream = getResources().openRawResource(R.raw.song2);
-
-            //Create an OutputStream with ContentResolver
-            OutputStream outputStream = resolver.openOutputStream(newAudioUri, "w");
-
-            //Read from InputStream into buffer then write to OutputStream
-            while ((i = inputStream.read(buffer)) != -1)
-                outputStream.write(buffer, 0, i);
-
-            inputStream.close();
-            outputStream.close();
-
-            Toast.makeText(this, "Audio saved", Toast.LENGTH_SHORT).show();
-        } catch (IOException e) {
-            Toast.makeText(this, "Failed to save audio", Toast.LENGTH_SHORT).show();
-        }
-
-    }
-
-    private void saveAudioToFile() {
-        // Initialize the input file path
-        File inputDirectory = new File(
-                getFilesDir() + "/" + "inputDirectory" + "/");
-        if (!inputDirectory.exists()) {
-            inputDirectory.mkdir();
-        }
-        File inputAudioFile = new File(inputDirectory + "/" + "song2.mp3");
-
-
-        //Initialize the output file path for saving audio to
-        String newAudioName = "filedSaveSong2.mp3";
-        File outputDirectory = new File(
-                getFilesDir() + "/" + "outputDirectory" + "/");
-        if (!outputDirectory.exists()) {
-            outputDirectory.mkdir();
-        }
-        File outputAudioFile = new File(outputDirectory + "/" + newAudioName);
-
-        //Create a buffer for transferring data between InputStream and OutputStream
-        // The "i" variable is for storing the number of bytes read from InputStream
-        int i = 0;
-        int bufferSize = 512;
-        byte[] buffer = new byte[bufferSize];
-
-        try {
-            // Create an InputStream from file path
-            FileInputStream inputStream = new FileInputStream(inputAudioFile);
-
-            // Create an OutputStream from file path
-            FileOutputStream outputStream = new FileOutputStream(outputAudioFile);
-
-            while ((i = inputStream.read(buffer)) != -1)
-                outputStream.write(buffer, 0, i);
-
-            outputStream.close();
-            inputStream.close();
-
-            Toast.makeText(this, "Audio saved", Toast.LENGTH_SHORT).show();
-        } catch (IOException e) {
-            Toast.makeText(this, "Failed to save audio", Toast.LENGTH_SHORT).show();
-        }
-
     }
 
     private boolean checkAndRequestPermissions() {
