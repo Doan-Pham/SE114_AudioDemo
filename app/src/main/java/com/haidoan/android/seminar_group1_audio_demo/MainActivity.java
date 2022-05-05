@@ -6,6 +6,7 @@ import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -57,9 +58,9 @@ public class MainActivity extends AppCompatActivity {
 
         loadButton = findViewById(R.id.load_button);
         loadButton.setOnClickListener(view -> {
-//            loadAudioFromResource();
-            loadAudioFromGallery();
-//            loadAudioFromFile();
+     //       loadAudioFromResource();
+          loadAudioFromGallery();
+  //          loadAudioFromFile();
         });
 
         playButton = findViewById(R.id.play_button);
@@ -104,6 +105,9 @@ public class MainActivity extends AppCompatActivity {
         // data/data/package_name/....
         File filePath = new File(getFilesDir().getPath()
                 + "/" + "inputDirectory" + "/" + "song2.mp3");
+
+//        Log.d("[INFO]", getFilesDir().getPath()
+//                + "/" + "inputDirectory" + "/" + "song2.mp3");
 
         Uri filePathAsUri = Uri.fromFile(filePath);
         mediaPlayer = MediaPlayer.create(this, filePathAsUri);
